@@ -1,10 +1,10 @@
 /* Placeholder dashboard, farm records will show here later */
 function Dashboard() {
   return (
-    <main className="min-h-screen bg-stone-100 text-stone-900 flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <h1 className="text-3xl font-bold text-green-700">Dashboard</h1>
-      <p>Your farm records will appear here.</p>
-    </main>
+    <section>
+      <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
+      <p className="mt-2 text-stone-600">Your farm records will appear here soon.</p>
+    </section>
   );
 }
 
