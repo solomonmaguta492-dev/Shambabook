@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Login from '../pages/Login.jsx';
 
 /* Fake useAuth and useToast so no real Firebase calls happen */
@@ -69,6 +69,27 @@ describe('Login page', () => {
 
     expect(mockLogin).toHaveBeenCalledWith('amina@example.com', 'secret1');
     expect(mockShowToast).toHaveBeenCalledWith('Welcome back!', 'success');
+  });
+
+  it('goes back to the page the user wanted after logging in', async () => {
+    const user = userEvent.setup();
+    mockLogin.mockResolvedValue();
+
+    /* Pretend ProtectedRoute sent the user here from /crops */
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { from: { pathname: '/crops' } } }]}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/crops" element={<p>Crops page</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByLabelText('Email'), 'amina@example.com');
+    await user.type(screen.getByLabelText('Password'), 'secret1');
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+
+    expect(await screen.findByText('Crops page')).toBeInTheDocument();
   });
 
   it('calls loginWithGoogle when the Google button is clicked', async () => {

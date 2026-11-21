@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import PublicLayout from './components/layouts/PublicLayout.jsx';
 import AppLayout from './components/layouts/AppLayout.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import PublicOnlyRoute from './components/PublicOnlyRoute.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -14,6 +16,7 @@ import NotFound from './pages/NotFound.jsx';
 
 /*
   Routes nested inside a layout route are drawn in that layout's <Outlet />.
+  ProtectedRoute and PublicOnlyRoute decide who may see the routes inside them.
   "*" catches any address that matches nothing else.
 */
 function App() {
@@ -21,17 +24,21 @@ function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
       </Route>
 
-      <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/crops" element={<Crops />} />
-        <Route path="/expenses" element={<Expenses />} />
-        <Route path="/harvests" element={<Harvests />} />
-        <Route path="/weather" element={<Weather />} />
-        <Route path="/profile" element={<Profile />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/crops" element={<Crops />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/harvests" element={<Harvests />} />
+          <Route path="/weather" element={<Weather />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />
