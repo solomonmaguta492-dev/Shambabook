@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Input from '../components/Input.jsx';
 import Button from '../components/Button.jsx';
 import GoogleButton from '../components/GoogleButton.jsx';
@@ -12,6 +12,10 @@ function Login() {
   const { login, loginWithGoogle } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  /* ProtectedRoute saves the page the user wanted, so we can send them back there */
+  const redirectTo = location.state?.from?.pathname || '/dashboard';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +51,7 @@ function Login() {
     try {
       await login(email.trim(), password);
       showToast('Welcome back!', 'success');
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (error) {
       setFormError(getAuthErrorMessage(error.code));
       setSubmitting(false);
@@ -62,7 +66,7 @@ function Login() {
       /* Google gives the full name, so take the first word */
       const firstName = result.user.displayName?.split(' ')[0] || result.user.email;
       showToast(`Welcome, ${firstName}!`, 'success');
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (error) {
       setFormError(getAuthErrorMessage(error.code));
       setGoogleLoading(false);
