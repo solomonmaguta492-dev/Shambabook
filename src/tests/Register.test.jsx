@@ -5,10 +5,11 @@ import Register from '../pages/Register.jsx';
 
 /* Fake useAuth and useToast so no real Firebase calls happen */
 const mockRegister = vi.fn();
+const mockLoginWithGoogle = vi.fn();
 const mockShowToast = vi.fn();
 
 vi.mock('../hooks/useAuth.js', () => ({
-  useAuth: () => ({ register: mockRegister }),
+  useAuth: () => ({ register: mockRegister, loginWithGoogle: mockLoginWithGoogle }),
 }));
 
 vi.mock('../hooks/useToast.js', () => ({
@@ -26,6 +27,7 @@ function renderRegister() {
 describe('Register page', () => {
   beforeEach(() => {
     mockRegister.mockReset();
+    mockLoginWithGoogle.mockReset();
     mockShowToast.mockReset();
   });
 
@@ -71,5 +73,28 @@ describe('Register page', () => {
 
     expect(mockRegister).toHaveBeenCalledWith('Amina Njeri', 'amina@example.com', 'secret1');
     expect(mockShowToast).toHaveBeenCalledWith('Account created!', 'success');
+  });
+
+  it('calls loginWithGoogle when the Google button is clicked', async () => {
+    const user = userEvent.setup();
+    mockLoginWithGoogle.mockResolvedValue({ user: { displayName: 'Amina Njeri' } });
+    renderRegister();
+
+    await user.click(screen.getByRole('button', { name: 'Sign up with Google' }));
+
+    expect(mockLoginWithGoogle).toHaveBeenCalled();
+    expect(mockShowToast).toHaveBeenCalledWith('Welcome, Amina!', 'success');
+  });
+
+  it('shows the friendly message when Google sign-in fails', async () => {
+    const user = userEvent.setup();
+    mockLoginWithGoogle.mockRejectedValue({ code: 'auth/popup-blocked' });
+    renderRegister();
+
+    await user.click(screen.getByRole('button', { name: 'Sign up with Google' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Your browser blocked the Google pop-up. Please allow pop-ups and try again'
+    );
   });
 });

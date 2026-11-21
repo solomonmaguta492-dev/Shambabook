@@ -5,10 +5,11 @@ import Login from '../pages/Login.jsx';
 
 /* Fake useAuth and useToast so no real Firebase calls happen */
 const mockLogin = vi.fn();
+const mockLoginWithGoogle = vi.fn();
 const mockShowToast = vi.fn();
 
 vi.mock('../hooks/useAuth.js', () => ({
-  useAuth: () => ({ login: mockLogin }),
+  useAuth: () => ({ login: mockLogin, loginWithGoogle: mockLoginWithGoogle }),
 }));
 
 vi.mock('../hooks/useToast.js', () => ({
@@ -26,6 +27,7 @@ function renderLogin() {
 describe('Login page', () => {
   beforeEach(() => {
     mockLogin.mockReset();
+    mockLoginWithGoogle.mockReset();
     mockShowToast.mockReset();
   });
 
@@ -67,5 +69,27 @@ describe('Login page', () => {
 
     expect(mockLogin).toHaveBeenCalledWith('amina@example.com', 'secret1');
     expect(mockShowToast).toHaveBeenCalledWith('Welcome back!', 'success');
+  });
+
+  it('calls loginWithGoogle when the Google button is clicked', async () => {
+    const user = userEvent.setup();
+    mockLoginWithGoogle.mockResolvedValue({ user: { displayName: 'Amina Njeri' } });
+    renderLogin();
+
+    await user.click(screen.getByRole('button', { name: 'Continue with Google' }));
+
+    expect(mockLoginWithGoogle).toHaveBeenCalled();
+    expect(mockShowToast).toHaveBeenCalledWith('Welcome, Amina!', 'success');
+  });
+
+  it('shows the friendly message when Google sign-in fails', async () => {
+    const user = userEvent.setup();
+    mockLoginWithGoogle.mockRejectedValue({ code: 'auth/popup-closed-by-user' });
+    renderLogin();
+
+    await user.click(screen.getByRole('button', { name: 'Continue with Google' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Google sign-in was cancelled');
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeEnabled();
   });
 });

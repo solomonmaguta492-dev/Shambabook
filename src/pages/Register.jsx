@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Input from '../components/Input.jsx';
 import Button from '../components/Button.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useToast } from '../hooks/useToast.js';
 import { getAuthErrorMessage } from '../utils/authErrors.js';
@@ -13,7 +14,7 @@ import {
 } from '../utils/validators.js';
 
 function Register() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -24,6 +25,7 @@ function Register() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   /* Refs let us move the cursor to the first field with a mistake */
   const nameRef = useRef(null);
@@ -66,6 +68,24 @@ function Register() {
       setSubmitting(false);
     }
   }
+
+  async function handleGoogle() {
+    setFormError('');
+    setGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle();
+      /* Google gives the full name, so take the first word */
+      const firstName = result.user.displayName?.split(' ')[0] || result.user.email;
+      showToast(`Welcome, ${firstName}!`, 'success');
+      navigate('/dashboard');
+    } catch (error) {
+      setFormError(getAuthErrorMessage(error.code));
+      setGoogleLoading(false);
+    }
+  }
+
+  /* Both buttons are disabled while either one is busy */
+  const busy = submitting || googleLoading;
 
   return (
     <div className="flex justify-center px-4 py-16">
@@ -120,9 +140,21 @@ function Register() {
             </p>
           )}
 
-          <Button type="submit" disabled={submitting} className="w-full disabled:opacity-60">
+          <Button type="submit" disabled={busy} className="w-full disabled:opacity-60">
             {submitting ? 'Creating account…' : 'Create account'}
           </Button>
+
+          <div className="flex items-center gap-3 text-sm text-stone-500">
+            <span className="h-px flex-1 bg-stone-300" />
+            or
+            <span className="h-px flex-1 bg-stone-300" />
+          </div>
+
+          <GoogleButton
+            label={googleLoading ? 'Connecting…' : 'Sign up with Google'}
+            onClick={handleGoogle}
+            disabled={busy}
+          />
         </form>
 
         <p className="mt-6 text-center">

@@ -8,6 +8,11 @@ const messages = {
   'auth/invalid-email': 'Please enter a valid email address',
   'auth/too-many-requests': 'Too many attempts. Please try again later',
   'auth/network-request-failed': 'No internet connection. Please try again',
+  'auth/popup-closed-by-user': 'Google sign-in was cancelled',
+  'auth/popup-blocked': 'Your browser blocked the Google pop-up. Please allow pop-ups and try again',
+  'auth/unauthorized-domain': "Google sign-in isn't allowed on this website yet",
+  'auth/account-exists-with-different-credential':
+    'This email is already registered with a password. Please log in with your email and password',
 };
 
 export function getAuthErrorMessage(code) {
