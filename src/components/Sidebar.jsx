@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import Logo from './Logo.jsx';
 import Icon from './Icon.jsx';
+import { useAuth } from '../hooks/useAuth.js';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -21,6 +22,15 @@ function linkClasses({ isActive }) {
 
 /* Side menu for the app, only shown on medium screens and up */
 function Sidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  /* Log out with Firebase, then go back to the landing page */
+  async function handleLogout() {
+    await logout();
+    navigate('/');
+  }
+
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-stone-300 bg-white p-4 md:flex">
       <div className="px-3 py-2">
@@ -42,6 +52,7 @@ function Sidebar() {
 
       <button
         type="button"
+        onClick={handleLogout}
         className="flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900"
       >
         <Icon name="logout" className="h-5 w-5" />
