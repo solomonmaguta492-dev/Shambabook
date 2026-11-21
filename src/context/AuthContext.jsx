@@ -3,10 +3,11 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from 'firebase/auth';
-import { auth } from '../services/firebase.js';
+import { auth, googleProvider } from '../services/firebase.js';
 
 /* Holds the logged-in user so any component can read it */
 /* eslint-disable-next-line react-refresh/only-export-components */
@@ -40,6 +41,11 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
+  /* Opens a Google pop-up; it works for new and existing accounts */
+  function loginWithGoogle() {
+    return signInWithPopup(auth, googleProvider);
+  }
+
   function logout() {
     return signOut(auth);
   }
@@ -54,7 +60,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
