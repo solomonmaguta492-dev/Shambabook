@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import Logo from './Logo.jsx';
 import Icon from './Icon.jsx';
 import { useAuth } from '../hooks/useAuth.js';
+import { useToast } from '../hooks/useToast.js';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -23,11 +24,13 @@ function linkClasses({ isActive }) {
 /* Side menu for the app, only shown on medium screens and up */
 function Sidebar() {
   const { logout } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
-  /* Log out with Firebase, then go back to the landing page */
+  /* Log out with Firebase, tell the user, then go back to the landing page */
   async function handleLogout() {
     await logout();
+    showToast("You've been logged out", 'success');
     navigate('/');
   }
 
