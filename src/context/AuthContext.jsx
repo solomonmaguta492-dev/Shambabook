@@ -46,6 +46,12 @@ export function AuthProvider({ children }) {
     return signInWithPopup(auth, googleProvider);
   }
 
+  /* Change the logged-in person's name, then copy the user so every page shows the new name */
+  async function updateName(name) {
+    await updateProfile(auth.currentUser, { displayName: name });
+    setUser({ ...auth.currentUser });
+  }
+
   function logout() {
     return signOut(auth);
   }
@@ -60,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, loginWithGoogle, updateName, logout }}>
       {children}
     </AuthContext.Provider>
   );
