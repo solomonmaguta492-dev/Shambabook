@@ -1,5 +1,11 @@
 import { createContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from 'firebase/auth';
 import { auth } from '../services/firebase.js';
 
 /* Holds the logged-in user so any component can read it */
@@ -21,6 +27,19 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
+  /* Create the account, then save the person's name on it */
+  async function register(name, email, password) {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(result.user, { displayName: name });
+
+    /* Firebase does not report the new name by itself, so copy the user to show it straight away */
+    setUser({ ...result.user });
+  }
+
+  function login(email, password) {
+    return signInWithEmailAndPassword(auth, email, password);
+  }
+
   function logout() {
     return signOut(auth);
   }
@@ -35,7 +54,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
