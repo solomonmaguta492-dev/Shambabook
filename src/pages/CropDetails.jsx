@@ -4,14 +4,15 @@ import Button from '../components/Button.jsx';
 import Modal from '../components/Modal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Spinner from '../components/Spinner.jsx';
+import StatCard from '../components/StatCard.jsx';
 import CropForm from '../components/crops/CropForm.jsx';
 import StatusBadge from '../components/crops/StatusBadge.jsx';
-import ExpenseForm from '../components/expenses/ExpenseForm.jsx';
-import ExpenseList from '../components/expenses/ExpenseList.jsx';
+import CropExpensesSection from '../components/expenses/CropExpensesSection.jsx';
+import CropHarvestsSection from '../components/harvests/CropHarvestsSection.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
-import { formatAcres, formatCurrency, formatDate } from '../utils/format.js';
-import { expensesForCrop, totalExpenses } from '../utils/calculations.js';
+import { formatAcres, formatCurrency, formatDate, profitTone } from '../utils/format.js';
+import { cropProfit, expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 import { deleteCropMessage } from '../utils/messages.js';
 
 const backLinkClasses = 'font-medium text-green-700 hover:text-green-800 hover:underline';
@@ -19,20 +20,14 @@ const backLinkClasses = 'font-medium text-green-700 hover:text-green-800 hover:u
 function CropDetails() {
   /* The :id part of the address, for example /crops/abc123 */
   const { id } = useParams();
-  const { crops, cropsLoading, updateCrop, deleteCrop, expenses, addExpense, updateExpense, deleteExpense } =
-    useFarm();
+  const { crops, cropsLoading, updateCrop, deleteCrop, expenses, harvests } = useFarm();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [expenseFormOpen, setExpenseFormOpen] = useState(false);
-  /* null when adding a new expense, or the expense being edited */
-  const [editingExpense, setEditingExpense] = useState(null);
-  const [expenseToDelete, setExpenseToDelete] = useState(null);
 
   const crop = crops.find((item) => item.id === id);
-  const cropExpenses = expensesForCrop(expenses, id);
 
   if (cropsLoading) {
     return <Spinner label="Loading crop…" />;
@@ -71,36 +66,8 @@ function CropDetails() {
     });
   }
 
-  function openExpenseForm(expense = null) {
-    setEditingExpense(expense);
-    setExpenseFormOpen(true);
-  }
-
-  function closeExpenseForm() {
-    setExpenseFormOpen(false);
-    setEditingExpense(null);
-  }
-
-  /* Same optimistic pattern as on the Expenses page */
-  function handleSaveExpense(data) {
-    const saving = editingExpense ? updateExpense(editingExpense.id, data) : addExpense(data);
-    showToast(editingExpense ? 'Expense updated' : 'Expense added', 'success');
-    closeExpenseForm();
-
-    saving.catch(() => {
-      showToast("Couldn't save the expense. Please try again.", 'error');
-    });
-  }
-
-  function handleDeleteExpense() {
-    const expense = expenseToDelete;
-    setExpenseToDelete(null);
-    showToast('Expense deleted', 'success');
-
-    deleteExpense(expense.id).catch(() => {
-      showToast("Couldn't delete the expense. Please try again.", 'error');
-    });
-  }
+  /* What this crop cost, what it earned, and the difference */
+  const summary = cropProfit(crop.id, expenses, harvests);
 
   const details = [
     { label: 'Variety', value: crop.variety || 'Not set' },
@@ -130,6 +97,16 @@ function CropDetails() {
         </div>
       </div>
 
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total expenses" value={formatCurrency(summary.expenses)} />
+        <StatCard label="Total income" value={formatCurrency(summary.income)} />
+        <StatCard
+          label={summary.profit < 0 ? 'Loss' : 'Profit'}
+          value={formatCurrency(summary.profit)}
+          tone={profitTone(summary.profit)}
+        />
+      </div>
+
       <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-stone-300 bg-white p-6 sm:grid-cols-2">
         {details.map((detail) => (
           <div key={detail.label}>
@@ -139,38 +116,8 @@ function CropDetails() {
         ))}
       </dl>
 
-      <section className="mt-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">Expenses</h2>
-            <p className="text-stone-600">
-              Total: <span className="font-bold text-stone-900">{formatCurrency(totalExpenses(cropExpenses))}</span>
-            </p>
-          </div>
-          <Button onClick={() => openExpenseForm()}>+ Add expense</Button>
-        </div>
-
-        <div className="mt-4">
-          {cropExpenses.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-stone-300 bg-white p-6 text-center text-stone-500">
-              No expenses for this crop yet.
-            </p>
-          ) : (
-            <ExpenseList
-              expenses={cropExpenses}
-              crops={crops}
-              showCrop={false}
-              onEdit={openExpenseForm}
-              onDelete={setExpenseToDelete}
-            />
-          )}
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-xl border border-stone-300 bg-white p-6">
-        <h2 className="text-lg font-semibold">Harvests</h2>
-        <p className="mt-1 text-stone-500">Coming soon</p>
-      </section>
+      <CropExpensesSection crop={crop} />
+      <CropHarvestsSection crop={crop} />
 
       <Modal open={editOpen} title="Edit crop" onClose={() => setEditOpen(false)}>
         <CropForm
@@ -184,28 +131,9 @@ function CropDetails() {
       <ConfirmDialog
         open={deleteOpen}
         title={`Delete ${crop.name}?`}
-        message={deleteCropMessage(cropExpenses.length)}
+        message={deleteCropMessage(expensesForCrop(expenses, crop.id).length, harvestsForCrop(harvests, crop.id).length)}
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}
-      />
-
-      <Modal open={expenseFormOpen} title={editingExpense ? 'Edit expense' : 'Add an expense'} onClose={closeExpenseForm}>
-        <ExpenseForm
-          expense={editingExpense}
-          crops={crops}
-          defaultCropId={crop.id}
-          submitLabel={editingExpense ? 'Save changes' : 'Add expense'}
-          onSubmit={handleSaveExpense}
-          onCancel={closeExpenseForm}
-        />
-      </Modal>
-
-      <ConfirmDialog
-        open={expenseToDelete !== null}
-        title={`Delete ${expenseToDelete?.category} expense?`}
-        message={`This ${formatCurrency(expenseToDelete?.amount ?? 0)} expense will be removed for good.`}
-        onConfirm={handleDeleteExpense}
-        onCancel={() => setExpenseToDelete(null)}
       />
     </section>
   );

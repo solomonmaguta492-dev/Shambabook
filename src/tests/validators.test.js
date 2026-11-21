@@ -2,6 +2,7 @@ import {
   validateCrop,
   validateEmail,
   validateExpense,
+  validateHarvest,
   validatePassword,
   validatePasswordsMatch,
   validateRequired,
@@ -124,5 +125,56 @@ describe('validateExpense', () => {
     expect(validateExpense({ ...validExpense, date: '' }).date).toBe('Date is required');
     expect(validateExpense({ ...validExpense, date: '2026-03-21' }).date).toBe('Date cannot be in the future');
     expect(validateExpense({ ...validExpense, date: '2026-03-20' })).toEqual({});
+  });
+});
+
+describe('validateHarvest', () => {
+  /* A harvest with no mistakes; each test changes one field */
+  const validHarvest = {
+    cropId: 'crop1',
+    quantity: '20',
+    unit: 'bags',
+    pricePerUnit: '3500',
+    date: '2026-03-12',
+  };
+
+  beforeEach(() => {
+    /* Pretend today is 20 March 2026, so "the future" is predictable */
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 2, 20, 12, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns no errors for a valid harvest', () => {
+    expect(validateHarvest(validHarvest)).toEqual({});
+  });
+
+  it('needs a crop', () => {
+    expect(validateHarvest({ ...validHarvest, cropId: '' }).cropId).toBe('Please choose a crop');
+  });
+
+  it('needs a quantity greater than 0', () => {
+    expect(validateHarvest({ ...validHarvest, quantity: '' }).quantity).toBe('Quantity is required');
+    expect(validateHarvest({ ...validHarvest, quantity: '0' }).quantity).toBe('Quantity must be greater than 0');
+  });
+
+  it('needs one of the units', () => {
+    expect(validateHarvest({ ...validHarvest, unit: '' }).unit).toBe('Please choose a unit');
+    expect(validateHarvest({ ...validHarvest, unit: 'tonnes' }).unit).toBe('Please choose a unit');
+  });
+
+  it('needs a price per unit greater than 0', () => {
+    expect(validateHarvest({ ...validHarvest, pricePerUnit: '' }).pricePerUnit).toBe('Price per unit is required');
+    expect(validateHarvest({ ...validHarvest, pricePerUnit: '-5' }).pricePerUnit).toBe(
+      'Price per unit must be greater than 0'
+    );
+  });
+
+  it('needs a date that is not in the future', () => {
+    expect(validateHarvest({ ...validHarvest, date: '' }).date).toBe('Date is required');
+    expect(validateHarvest({ ...validHarvest, date: '2026-03-21' }).date).toBe('Date cannot be in the future');
   });
 });

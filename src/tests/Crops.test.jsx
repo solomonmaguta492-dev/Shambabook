@@ -30,6 +30,7 @@ function mockFarm(overrides = {}) {
     updateCrop: vi.fn(),
     deleteCrop: vi.fn(),
     expenses: [],
+    harvests: [],
     ...overrides,
   };
   vi.mocked(useFarm).mockReturnValue(farm);
