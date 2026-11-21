@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 const variants = {
   primary: 'bg-green-700 text-white hover:bg-green-800',
   secondary: 'border border-green-700 bg-white text-green-700 hover:bg-green-50',
+  danger: 'bg-rose-700 text-white hover:bg-rose-800',
 };
 
 /*

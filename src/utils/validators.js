@@ -27,3 +27,38 @@ export function validatePasswordsMatch(password, confirmPassword) {
   }
   return password === confirmPassword ? '' : 'Passwords do not match';
 }
+
+export const CROP_STATUSES = ['Planted', 'Growing', 'Harvested'];
+
+/*
+  Checks a crop form and returns an object of error messages, one per field.
+  An empty object means everything is fine.
+*/
+export function validateCrop(data) {
+  const errors = {};
+
+  if (data.name.trim() === '') {
+    errors.name = 'Crop name is required';
+  }
+
+  if (String(data.plotSize).trim() === '') {
+    errors.plotSize = 'Plot size is required';
+  } else if (!(Number(data.plotSize) > 0)) {
+    errors.plotSize = 'Plot size must be a number greater than 0';
+  }
+
+  if (data.plantingDate === '') {
+    errors.plantingDate = 'Planting date is required';
+  }
+
+  /* YYYY-MM-DD strings can be compared like words, so "<" works for dates */
+  if (data.plantingDate && data.expectedHarvestDate && data.expectedHarvestDate < data.plantingDate) {
+    errors.expectedHarvestDate = 'Harvest date cannot be before the planting date';
+  }
+
+  if (!CROP_STATUSES.includes(data.status)) {
+    errors.status = 'Please choose a status';
+  }
+
+  return errors;
+}
