@@ -18,3 +18,19 @@ export function formatDate(dateString) {
 export function formatAcres(plotSize) {
   return `${plotSize} ${plotSize === 1 ? 'acre' : 'acres'}`;
 }
+
+/* Adds commas and up to 2 decimals, for example 12500 → "12,500" */
+const numberFormat = new Intl.NumberFormat('en-KE', { maximumFractionDigits: 2 });
+
+/* 12500 → "KES 12,500" */
+export function formatCurrency(amount) {
+  return `KES ${numberFormat.format(amount)}`;
+}
+
+/* Today's date as "YYYY-MM-DD" in the farmer's own time zone */
+export function todayString() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}

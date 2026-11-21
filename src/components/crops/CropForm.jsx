@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import Input from '../Input.jsx';
+import Select from '../Select.jsx';
 import Button from '../Button.jsx';
 import { CROP_STATUSES, validateCrop } from '../../utils/validators.js';
 
@@ -124,32 +125,21 @@ function CropForm({ crop, submitLabel = 'Save crop', onSubmit, onCancel }) {
         />
       </div>
 
-      <div>
-        <label htmlFor="crop-status" className="block font-medium text-stone-700">
-          Status
-        </label>
-        <select
-          id="crop-status"
-          name="status"
-          value={values.status}
-          onChange={handleChange}
-          ref={statusRef}
-          aria-invalid={errors.status ? 'true' : 'false'}
-          aria-describedby={errors.status ? 'crop-status-error' : undefined}
-          className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 focus:outline-2 focus:outline-offset-1 focus:outline-green-700"
-        >
-          {CROP_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-        {errors.status && (
-          <p id="crop-status-error" className="mt-1 text-sm text-rose-700">
-            {errors.status}
-          </p>
-        )}
-      </div>
+      <Select
+        id="crop-status"
+        name="status"
+        label="Status"
+        value={values.status}
+        onChange={handleChange}
+        error={errors.status}
+        ref={statusRef}
+      >
+        {CROP_STATUSES.map((status) => (
+          <option key={status} value={status}>
+            {status}
+          </option>
+        ))}
+      </Select>
 
       <div className="mt-2 flex justify-end gap-3">
         <Button variant="secondary" onClick={onCancel}>
