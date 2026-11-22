@@ -32,10 +32,10 @@ describe('ExpenseList', () => {
     const onDelete = vi.fn();
     render(<ExpenseList expenses={expenses} crops={crops} onEdit={onEdit} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole('button', { name: 'Edit Fertiliser expense' }));
+    await user.click(screen.getByRole('button', { name: 'Edit Fertiliser expense from 12 Mar 2026' }));
     expect(onEdit).toHaveBeenCalledWith(expenses[0]);
 
-    await user.click(screen.getByRole('button', { name: 'Delete Labour expense' }));
+    await user.click(screen.getByRole('button', { name: 'Delete Labour expense from 2 Mar 2026' }));
     expect(onDelete).toHaveBeenCalledWith(expenses[1]);
   });
 
@@ -44,7 +44,7 @@ describe('ExpenseList', () => {
       <ExpenseList expenses={expenses} crops={crops} deletingIds={['e1']} onEdit={vi.fn()} onDelete={vi.fn()} />
     );
 
-    expect(screen.getByRole('button', { name: 'Delete Fertiliser expense' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Delete Labour expense' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Delete Fertiliser expense from 12 Mar 2026' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete Labour expense from 2 Mar 2026' })).toBeEnabled();
   });
 });

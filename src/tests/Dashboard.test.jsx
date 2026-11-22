@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from '../pages/Dashboard.jsx';
 import { useFarm } from '../hooks/useFarm.js';
@@ -81,15 +81,15 @@ describe('Dashboard', () => {
     expect(cardValue('Net profit')).toHaveClass('text-green-700');
   });
 
-  it('shows a loss in rose', () => {
+  it('shows a loss in rose, labelled "Net loss"', () => {
     mockFarm({
       expenses: [{ id: 'e1', cropId: 'c1', amount: 3000, date: '2026-03-01' }],
       harvests: [{ id: 'h1', cropId: 'c1', quantity: 10, pricePerUnit: 100, date: '2026-03-01' }],
     });
     renderDashboard();
 
-    expect(cardValue('Net profit')).toHaveTextContent('-KES 2,000');
-    expect(cardValue('Net profit')).toHaveClass('text-rose-700');
+    expect(cardValue('Net loss')).toHaveTextContent('-KES 2,000');
+    expect(cardValue('Net loss')).toHaveClass('text-rose-700');
   });
 
   it('names the most profitable crop when there is income', () => {
@@ -210,5 +210,23 @@ describe('Dashboard', () => {
     const section = screen.getByRole('region', { name: 'Recent activity' });
     expect(within(section).getByRole('link', { name: 'Add an expense' })).toHaveAttribute('href', '/expenses');
     expect(within(section).getByRole('link', { name: 'add a harvest' })).toHaveAttribute('href', '/harvests');
+  });
+
+  it('shows one Retry for all lists when a list fails to load', () => {
+    const farm = {
+      expensesError: "We couldn't load your expenses.",
+      retryCrops: vi.fn(),
+      retryExpenses: vi.fn(),
+      retryHarvests: vi.fn(),
+    };
+    mockFarm(farm);
+    renderDashboard();
+
+    expect(screen.getByRole('alert')).toHaveTextContent("We couldn't load some of your farm records");
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(farm.retryCrops).toHaveBeenCalled();
+    expect(farm.retryExpenses).toHaveBeenCalled();
+    expect(farm.retryHarvests).toHaveBeenCalled();
   });
 });

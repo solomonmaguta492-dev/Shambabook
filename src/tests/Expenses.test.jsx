@@ -143,7 +143,7 @@ describe('Expenses page', () => {
     farm.deleteExpense.mockResolvedValue();
     renderExpenses();
 
-    await user.click(screen.getByRole('button', { name: 'Delete Labour expense' }));
+    await user.click(screen.getByRole('button', { name: 'Delete Labour expense from 10 Mar 2026' }));
     const dialog = screen.getByRole('dialog', { name: 'Delete Labour expense?' });
     await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
 

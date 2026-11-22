@@ -121,4 +121,24 @@ describe('CropDetails page', () => {
 
     expect(screen.getByRole('heading', { name: 'Crop not found' })).toBeInTheDocument();
   });
+
+  it("shows an error with Retry instead of \"Crop not found\" when crops fail to load", async () => {
+    const user = userEvent.setup();
+    const retryCrops = vi.fn();
+    mockFarm({ crops: [], cropsError: "We couldn't load your crops.", retryCrops });
+    renderAt('/crops/c1');
+
+    expect(screen.getByRole('alert')).toHaveTextContent("We couldn't load your crops.");
+    expect(screen.queryByText('Crop not found')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(retryCrops).toHaveBeenCalled();
+  });
+
+  it('sets the page title to the crop name', () => {
+    mockFarm();
+    renderAt('/crops/c1');
+
+    expect(document.title).toBe('Maize · ShambaBook');
+  });
 });

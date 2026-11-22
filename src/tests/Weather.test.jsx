@@ -119,4 +119,18 @@ describe('Weather page', () => {
 
     expect(weather.refetch).toHaveBeenCalled();
   });
+
+  it('shows an error with Retry when the farm location fails to load', async () => {
+    const user = userEvent.setup();
+    const retryProfile = vi.fn();
+    mockFarm({ profile: null, profileError: "We couldn't load your farm location.", retryProfile });
+    mockWeather();
+    renderWeather();
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Weather' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent("We couldn't load your farm location.");
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(retryProfile).toHaveBeenCalled();
+  });
 });
