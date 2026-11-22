@@ -9,13 +9,14 @@ import CropForm from '../components/crops/CropForm.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
 import { CROP_STATUSES } from '../utils/validators.js';
-import { expensesForCrop } from '../utils/calculations.js';
+import { expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 import { deleteCropMessage } from '../utils/messages.js';
 
 const FILTERS = ['All', ...CROP_STATUSES];
 
 function Crops() {
-  const { crops, cropsLoading, cropsError, retryCrops, addCrop, updateCrop, deleteCrop, expenses } = useFarm();
+  const { crops, cropsLoading, cropsError, retryCrops, addCrop, updateCrop, deleteCrop, expenses, harvests } =
+    useFarm();
   const { showToast } = useToast();
 
   const [filter, setFilter] = useState('All');
@@ -171,7 +172,14 @@ function Crops() {
       <ConfirmDialog
         open={cropToDelete !== null}
         title={`Delete ${cropToDelete?.name}?`}
-        message={deleteCropMessage(cropToDelete ? expensesForCrop(expenses, cropToDelete.id).length : 0)}
+        message={
+          cropToDelete
+            ? deleteCropMessage(
+                expensesForCrop(expenses, cropToDelete.id).length,
+                harvestsForCrop(harvests, cropToDelete.id).length
+              )
+            : ''
+        }
         onConfirm={handleDelete}
         onCancel={() => setCropToDelete(null)}
       />
