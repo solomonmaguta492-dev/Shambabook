@@ -49,3 +49,12 @@ export function todayString() {
   const day = String(now.getDate()).padStart(2, '0');
   return `${now.getFullYear()}-${month}-${day}`;
 }
+
+/*
+  "2026-11-24" → "Tue", or "Tuesday" with style "long".
+  Built from its parts, like formatDate, so the time zone can't shift the day.
+*/
+export function formatWeekday(dateString, style = 'short') {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-GB', { weekday: style });
+}
