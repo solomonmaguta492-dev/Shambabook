@@ -1,6 +1,7 @@
 import {
   validateCrop,
   validateEmail,
+  validateExpense,
   validatePassword,
   validatePasswordsMatch,
   validateRequired,
@@ -77,5 +78,51 @@ describe('validateCrop', () => {
   it('only allows the three statuses', () => {
     expect(validateCrop({ ...validCrop, status: 'Dead' }).status).toBe('Please choose a status');
     expect(validateCrop({ ...validCrop, status: 'Harvested' })).toEqual({});
+  });
+});
+
+describe('validateExpense', () => {
+  /* An expense with no mistakes; each test changes one field */
+  const validExpense = {
+    cropId: 'crop1',
+    category: 'Fertiliser',
+    amount: '2500',
+    date: '2026-03-12',
+    note: '',
+  };
+
+  beforeEach(() => {
+    /* Pretend today is 20 March 2026, so "the future" is predictable */
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 2, 20, 12, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns no errors for a valid expense', () => {
+    expect(validateExpense(validExpense)).toEqual({});
+  });
+
+  it('needs a crop', () => {
+    expect(validateExpense({ ...validExpense, cropId: '' }).cropId).toBe('Please choose a crop');
+  });
+
+  it('needs one of the categories', () => {
+    expect(validateExpense({ ...validExpense, category: '' }).category).toBe('Please choose a category');
+    expect(validateExpense({ ...validExpense, category: 'Snacks' }).category).toBe('Please choose a category');
+  });
+
+  it('needs an amount greater than 0', () => {
+    expect(validateExpense({ ...validExpense, amount: '' }).amount).toBe('Amount is required');
+    expect(validateExpense({ ...validExpense, amount: '0' }).amount).toBe('Amount must be greater than 0');
+    expect(validateExpense({ ...validExpense, amount: '-50' }).amount).toBe('Amount must be greater than 0');
+  });
+
+  it('needs a date that is not in the future', () => {
+    expect(validateExpense({ ...validExpense, date: '' }).date).toBe('Date is required');
+    expect(validateExpense({ ...validExpense, date: '2026-03-21' }).date).toBe('Date cannot be in the future');
+    expect(validateExpense({ ...validExpense, date: '2026-03-20' })).toEqual({});
   });
 });

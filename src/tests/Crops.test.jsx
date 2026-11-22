@@ -29,6 +29,7 @@ function mockFarm(overrides = {}) {
     addCrop: vi.fn(),
     updateCrop: vi.fn(),
     deleteCrop: vi.fn(),
+    expenses: [],
     ...overrides,
   };
   vi.mocked(useFarm).mockReturnValue(farm);
@@ -124,6 +125,22 @@ describe('Crops page', () => {
     expect(mockShowToast).toHaveBeenCalledWith('Crop deleted', 'success');
     /* Still waiting for Firestore, so it can't be deleted twice */
     expect(screen.getByRole('button', { name: 'Delete Maize' })).toBeDisabled();
+  });
+
+  it('warns that deleting a crop also deletes its expenses', async () => {
+    const user = userEvent.setup();
+    mockFarm({
+      crops: sampleCrops,
+      expenses: [
+        { id: 'e1', cropId: 'c1', category: 'Seed', amount: 500, date: '2026-03-01' },
+        { id: 'e2', cropId: 'c1', category: 'Labour', amount: 800, date: '2026-03-02' },
+      ],
+    });
+    renderCrops();
+
+    await user.click(screen.getByRole('button', { name: 'Delete Maize' }));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('This will also delete its 2 expenses.');
   });
 
   it('shows an error toast if the delete fails', async () => {
