@@ -51,3 +51,51 @@ export function mostProfitableCrop(crops, expenses, harvests) {
 
   return best;
 }
+
+/*
+  The crop whose harvest comes soonest: not yet Harvested and expected today or later.
+  Dates are "YYYY-MM-DD" text, so comparing them as text also compares them as dates.
+  Returns null when there is no upcoming harvest.
+*/
+export function nextHarvest(crops, today) {
+  const upcoming = crops.filter(
+    (crop) => crop.status !== 'Harvested' && crop.expectedHarvestDate && crop.expectedHarvestDate >= today
+  );
+
+  if (upcoming.length === 0) {
+    return null;
+  }
+
+  /* Copy before sorting, so the crops list we were given stays as it was */
+  const soonestFirst = [...upcoming].sort((a, b) => a.expectedHarvestDate.localeCompare(b.expectedHarvestDate));
+  return soonestFirst[0];
+}
+
+/*
+  Expenses and harvests in one list, newest date first, cut to "limit" items.
+  Each item is { id, type, cropName, date, amount }, where type is "expense" or "harvest".
+*/
+export function recentActivity(expenses, harvests, crops, limit = 5) {
+  function cropName(cropId) {
+    return crops.find((crop) => crop.id === cropId)?.name ?? 'Unknown crop';
+  }
+
+  const expenseItems = expenses.map((expense) => ({
+    id: `expense-${expense.id}`,
+    type: 'expense',
+    cropName: cropName(expense.cropId),
+    date: expense.date,
+    amount: Number(expense.amount),
+  }));
+
+  const harvestItems = harvests.map((harvest) => ({
+    id: `harvest-${harvest.id}`,
+    type: 'harvest',
+    cropName: cropName(harvest.cropId),
+    date: harvest.date,
+    amount: harvestIncome(harvest),
+  }));
+
+  const newestFirst = [...expenseItems, ...harvestItems].sort((a, b) => b.date.localeCompare(a.date));
+  return newestFirst.slice(0, limit);
+}

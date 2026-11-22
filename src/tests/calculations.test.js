@@ -4,6 +4,8 @@ import {
   harvestIncome,
   harvestsForCrop,
   mostProfitableCrop,
+  nextHarvest,
+  recentActivity,
   totalExpenses,
   totalIncome,
 } from '../utils/calculations.js';
@@ -83,5 +85,94 @@ describe('profit', () => {
 
   it('mostProfitableCrop is null when no crop has income yet', () => {
     expect(mostProfitableCrop([{ id: 'maize', name: 'Maize' }], expenses, [])).toBeNull();
+  });
+});
+
+describe('nextHarvest', () => {
+  const today = '2026-11-22';
+
+  it('picks the soonest harvest date that is today or later', () => {
+    const crops = [
+      { id: 'c1', name: 'Maize', status: 'Growing', expectedHarvestDate: '2027-01-10' },
+      { id: 'c2', name: 'Beans', status: 'Planted', expectedHarvestDate: '2026-12-05' },
+      { id: 'c3', name: 'Kale', status: 'Growing', expectedHarvestDate: '2026-11-01' },
+    ];
+
+    expect(nextHarvest(crops, today).name).toBe('Beans');
+  });
+
+  it('counts a harvest that is due today', () => {
+    const crops = [{ id: 'c1', name: 'Maize', status: 'Growing', expectedHarvestDate: today }];
+
+    expect(nextHarvest(crops, today).name).toBe('Maize');
+  });
+
+  it('skips crops that are already Harvested or have no date', () => {
+    const crops = [
+      { id: 'c1', name: 'Maize', status: 'Harvested', expectedHarvestDate: '2026-11-30' },
+      { id: 'c2', name: 'Beans', status: 'Growing', expectedHarvestDate: '' },
+    ];
+
+    expect(nextHarvest(crops, today)).toBeNull();
+  });
+
+  it('does not change the order of the crops it was given', () => {
+    const crops = [
+      { id: 'c1', name: 'Maize', status: 'Growing', expectedHarvestDate: '2027-01-10' },
+      { id: 'c2', name: 'Beans', status: 'Growing', expectedHarvestDate: '2026-12-05' },
+    ];
+
+    nextHarvest(crops, today);
+
+    expect(crops.map((crop) => crop.id)).toEqual(['c1', 'c2']);
+  });
+});
+
+describe('recentActivity', () => {
+  const crops = [
+    { id: 'maize', name: 'Maize' },
+    { id: 'beans', name: 'Beans' },
+  ];
+
+  it('mixes expenses and harvests, newest date first', () => {
+    const items = recentActivity(
+      [{ id: 'e1', cropId: 'maize', amount: 1500, date: '2026-03-01' }],
+      [{ id: 'h1', cropId: 'beans', quantity: 10, pricePerUnit: 50, date: '2026-03-05' }],
+      crops
+    );
+
+    expect(items).toEqual([
+      { id: 'harvest-h1', type: 'harvest', cropName: 'Beans', date: '2026-03-05', amount: 500 },
+      { id: 'expense-e1', type: 'expense', cropName: 'Maize', date: '2026-03-01', amount: 1500 },
+    ]);
+  });
+
+  it('keeps only the 5 newest', () => {
+    const manyExpenses = ['01', '02', '03', '04', '05', '06', '07'].map((day) => ({
+      id: day,
+      cropId: 'maize',
+      amount: 100,
+      date: `2026-03-${day}`,
+    }));
+
+    const items = recentActivity(manyExpenses, [], crops);
+
+    expect(items.map((item) => item.date)).toEqual([
+      '2026-03-07',
+      '2026-03-06',
+      '2026-03-05',
+      '2026-03-04',
+      '2026-03-03',
+    ]);
+  });
+
+  it('says "Unknown crop" when the crop is missing', () => {
+    const items = recentActivity([{ id: 'e1', cropId: 'gone', amount: 100, date: '2026-03-01' }], [], crops);
+
+    expect(items[0].cropName).toBe('Unknown crop');
+  });
+
+  it('returns an empty list when there is nothing', () => {
+    expect(recentActivity([], [], crops)).toEqual([]);
   });
 });
