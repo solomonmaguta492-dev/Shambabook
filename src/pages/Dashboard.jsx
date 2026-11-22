@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import StatCard from '../components/StatCard.jsx';
 import WeatherCard from '../components/dashboard/WeatherCard.jsx';
 import NextHarvestCard from '../components/dashboard/NextHarvestCard.jsx';
@@ -13,18 +14,43 @@ import {
   totalExpenses,
   totalIncome,
 } from '../utils/calculations.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const linkClasses = 'mt-2 inline-block font-medium text-green-700 hover:text-green-800 hover:underline';
 
 /* Greets the farmer and shows a quick summary of the whole farm */
 function Dashboard() {
+  usePageTitle('Dashboard');
   const { user } = useAuth();
-  const { crops, cropsLoading, expenses, expensesLoading, harvests, harvestsLoading, profile, profileLoading } =
-    useFarm();
+  const {
+    crops,
+    cropsLoading,
+    cropsError,
+    retryCrops,
+    expenses,
+    expensesLoading,
+    expensesError,
+    retryExpenses,
+    harvests,
+    harvestsLoading,
+    harvestsError,
+    retryHarvests,
+    profile,
+    profileLoading,
+    profileError,
+  } = useFarm();
 
   /* Use the name if we have one, otherwise the email */
   const name = user?.displayName || user?.email;
   const loading = cropsLoading || expensesLoading || harvestsLoading;
+  const loadError = cropsError || expensesError || harvestsError;
+
+  /* One Retry button tries every list again */
+  function retryAll() {
+    retryCrops();
+    retryExpenses();
+    retryHarvests();
+  }
 
   /* Whole-farm numbers: everything earned minus everything spent */
   const spent = totalExpenses(expenses);
@@ -39,7 +65,16 @@ function Dashboard() {
 
   return (
     <section>
-      <h1 className="text-2xl font-bold md:text-3xl">Hello, {name}</h1>
+      <h1 className="text-2xl font-bold break-words md:text-3xl">Hello, {name}</h1>
+
+      {loadError && (
+        <div className="mt-6">
+          <ErrorMessage
+            message="We couldn't load some of your farm records, so these numbers may be wrong."
+            onRetry={retryAll}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon="crops" label="Crops" value={show(crops.length)}>
@@ -59,7 +94,7 @@ function Dashboard() {
         </StatCard>
         <StatCard
           icon="chart"
-          label="Net profit"
+          label={!loading && netProfit < 0 ? 'Net loss' : 'Net profit'}
           value={show(formatCurrency(netProfit))}
           tone={loading ? 'neutral' : profitTone(netProfit)}
         />
@@ -76,7 +111,7 @@ function Dashboard() {
       )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <WeatherCard location={profile?.location} locationLoading={profileLoading} />
+        <WeatherCard location={profile?.location} locationLoading={profileLoading} locationError={profileError} />
         <NextHarvestCard crop={nextHarvest(crops, todayString())} loading={cropsLoading} />
       </div>
 

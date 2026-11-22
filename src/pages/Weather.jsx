@@ -3,11 +3,13 @@ import Button from '../components/Button.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import Spinner from '../components/Spinner.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useWeather } from '../hooks/useWeather.js';
 import { describeWeather } from '../utils/weatherCodes.js';
 import { getFarmingTips } from '../utils/weatherTips.js';
 import { formatWeekday } from '../utils/format.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 /* 24.4 → "24°C" */
 function formatTemperature(value) {
@@ -76,25 +78,27 @@ function DayCard({ day, isToday }) {
 }
 
 function Weather() {
-  const { profile, profileLoading } = useFarm();
+  usePageTitle('Weather');
+  const { profile, profileLoading, profileError, retryProfile } = useFarm();
   const location = profile?.location;
   const { data, loading, error, refetch } = useWeather(location);
 
-  if (profileLoading) {
-    return <Spinner label="Loading your farm location…" />;
-  }
-
-  if (!location) {
+  /* Before we know the farm's location: loading, an error, or no location saved */
+  if (profileLoading || profileError || !location) {
     return (
       <section>
         <h1 className="text-2xl font-bold md:text-3xl">Weather</h1>
         <div className="mt-6">
-          <EmptyState
-            icon="weather"
-            title="Set your farm location to see the forecast"
-            message="Pick your town on the Profile page and we'll show the weather for your farm."
-            action={<Button to="/profile">Set location</Button>}
-          />
+          {profileLoading && <Spinner label="Loading your farm location…" />}
+          {!profileLoading && profileError && <ErrorMessage message={profileError} onRetry={retryProfile} />}
+          {!profileLoading && !profileError && (
+            <EmptyState
+              icon="weather"
+              title="Set your farm location to see the forecast"
+              message="Pick your town on the Profile page and we'll show the weather for your farm."
+              action={<Button to="/profile">Set location</Button>}
+            />
+          )}
         </div>
       </section>
     );
@@ -108,12 +112,7 @@ function Weather() {
 
     if (error) {
       return (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-          <p>{error}</p>
-          <Button variant="secondary" onClick={refetch} className="mt-4">
-            Retry
-          </Button>
-        </div>
+        <ErrorMessage message={error} onRetry={refetch} />
       );
     }
 
