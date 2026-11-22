@@ -1,56 +1,69 @@
 import { Link } from 'react-router-dom';
-import Icon from '../components/Icon.jsx';
+import StatCard from '../components/StatCard.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useFarm } from '../hooks/useFarm.js';
-import { formatCurrency } from '../utils/format.js';
-import { totalExpenses } from '../utils/calculations.js';
+import { formatCurrency, profitTone } from '../utils/format.js';
+import { mostProfitableCrop, totalExpenses, totalIncome } from '../utils/calculations.js';
 
-/* One small box with an icon, a big number and a link */
-function SummaryCard({ icon, title, value, linkTo, linkText }) {
-  return (
-    <div className="rounded-xl border border-stone-300 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-3 text-stone-600">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-green-700">
-          <Icon name={icon} className="h-5 w-5" />
-        </span>
-        <h2 className="font-medium">{title}</h2>
-      </div>
-      <p className="mt-3 text-3xl font-bold text-stone-900">{value}</p>
-      <Link to={linkTo} className="mt-2 inline-block font-medium text-green-700 hover:text-green-800 hover:underline">
-        {linkText}
-      </Link>
-    </div>
-  );
-}
+const linkClasses = 'mt-2 inline-block font-medium text-green-700 hover:text-green-800 hover:underline';
 
-/* Greets the farmer and shows a quick summary of their farm */
+/* Greets the farmer and shows a quick summary of the whole farm */
 function Dashboard() {
   const { user } = useAuth();
-  const { crops, cropsLoading, expenses, expensesLoading } = useFarm();
+  const { crops, cropsLoading, expenses, expensesLoading, harvests, harvestsLoading } = useFarm();
 
   /* Use the name if we have one, otherwise the email */
   const name = user?.displayName || user?.email;
+  const loading = cropsLoading || expensesLoading || harvestsLoading;
+
+  /* Whole-farm numbers: everything earned minus everything spent */
+  const spent = totalExpenses(expenses);
+  const earned = totalIncome(harvests);
+  const netProfit = earned - spent;
+  const best = mostProfitableCrop(crops, expenses, harvests);
+
+  /* Shows "…" until Firestore has sent the records */
+  function show(value) {
+    return loading ? '…' : value;
+  }
 
   return (
     <section>
       <h1 className="text-2xl font-bold md:text-3xl">Hello, {name}</h1>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard
-          icon="crops"
-          title="Crops"
-          value={cropsLoading ? '…' : crops.length}
-          linkTo="/crops"
-          linkText="View crops →"
-        />
-        <SummaryCard
-          icon="expenses"
-          title="Total expenses"
-          value={expensesLoading ? '…' : formatCurrency(totalExpenses(expenses))}
-          linkTo="/expenses"
-          linkText="View expenses →"
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon="crops" label="Crops" value={show(crops.length)}>
+          <Link to="/crops" className={linkClasses}>
+            View crops →
+          </Link>
+        </StatCard>
+        <StatCard icon="expenses" label="Total expenses" value={show(formatCurrency(spent))}>
+          <Link to="/expenses" className={linkClasses}>
+            View expenses →
+          </Link>
+        </StatCard>
+        <StatCard icon="harvests" label="Total income" value={show(formatCurrency(earned))}>
+          <Link to="/harvests" className={linkClasses}>
+            View harvests →
+          </Link>
+        </StatCard>
+        <StatCard
+          icon="chart"
+          label="Net profit"
+          value={show(formatCurrency(netProfit))}
+          tone={loading ? 'neutral' : profitTone(netProfit)}
         />
       </div>
+
+      {!loading && best && (
+        <p className="mt-6 rounded-xl border border-stone-300 bg-white p-4 text-stone-700">
+          Most profitable crop:{' '}
+          <Link to={`/crops/${best.crop.id}`} className="font-semibold text-green-700 hover:underline">
+            {best.crop.name}
+          </Link>{' '}
+          ({formatCurrency(best.profit)} profit)
+        </p>
+      )}
     </section>
   );
 }
