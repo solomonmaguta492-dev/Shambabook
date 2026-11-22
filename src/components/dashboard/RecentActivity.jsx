@@ -39,8 +39,8 @@ function RecentActivity({ items, loading }) {
 
             return (
               <li key={item.id} className="flex items-center justify-between gap-4 py-3">
-                <div>
-                  <p className="font-medium text-stone-900">
+                <div className="min-w-0">
+                  <p className="font-medium break-words text-stone-900">
                     {isExpense ? 'Expense' : 'Harvest'} · {item.cropName}
                   </p>
                   <p className="text-sm text-stone-500">{formatDate(item.date)}</p>
