@@ -3,7 +3,7 @@ import { formatCurrency, formatDate, formatQuantity } from '../../utils/format.j
 import { harvestIncome } from '../../utils/calculations.js';
 
 const iconButton =
-  'rounded-lg p-2 text-stone-500 focus-visible:outline-2 focus-visible:outline-green-700 disabled:opacity-40';
+  'rounded-lg p-3 text-stone-500 focus-visible:outline-2 focus-visible:outline-green-700 disabled:opacity-40';
 
 /*
   A list of harvests with Edit and Delete buttons on each row.
