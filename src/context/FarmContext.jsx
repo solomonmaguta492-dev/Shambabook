@@ -32,21 +32,25 @@ export function FarmProvider({ children }) {
 
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [profileRetry, setProfileRetry] = useState(0);
 
   useEffect(() => {
     const unsubscribe = profileService.subscribeToProfile(
       uid,
       (newProfile) => {
         setProfile(newProfile);
+        setProfileError('');
         setProfileLoading(false);
       },
       () => {
+        setProfileError("We couldn't load your farm location. Please check your connection.");
         setProfileLoading(false);
       }
     );
 
     return unsubscribe;
-  }, [uid]);
+  }, [uid, profileRetry]);
 
   useEffect(() => {
     const unsubscribe = cropsService.subscribeToCrops(
@@ -110,6 +114,12 @@ export function FarmProvider({ children }) {
     setExpensesLoading(true);
     setExpensesError('');
     setExpensesRetry((count) => count + 1);
+  }
+
+  function retryProfile() {
+    setProfileLoading(true);
+    setProfileError('');
+    setProfileRetry((count) => count + 1);
   }
 
   function retryHarvests() {
@@ -189,6 +199,8 @@ export function FarmProvider({ children }) {
     deleteHarvest,
     profile,
     profileLoading,
+    profileError,
+    retryProfile,
     saveLocation,
   };
 
