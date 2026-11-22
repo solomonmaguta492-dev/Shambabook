@@ -1,3 +1,5 @@
+import { todayString } from './format.js';
+
 /* Each function returns an error message, or an empty string when the value is fine */
 
 export function validateRequired(value, label) {
@@ -58,6 +60,36 @@ export function validateCrop(data) {
 
   if (!CROP_STATUSES.includes(data.status)) {
     errors.status = 'Please choose a status';
+  }
+
+  return errors;
+}
+
+export const EXPENSE_CATEGORIES = ['Seed', 'Fertiliser', 'Pesticide', 'Labour', 'Transport', 'Other'];
+
+/* Checks an expense form; an empty object means everything is fine */
+export function validateExpense(data) {
+  const errors = {};
+
+  if (!data.cropId) {
+    errors.cropId = 'Please choose a crop';
+  }
+
+  if (!EXPENSE_CATEGORIES.includes(data.category)) {
+    errors.category = 'Please choose a category';
+  }
+
+  if (String(data.amount).trim() === '') {
+    errors.amount = 'Amount is required';
+  } else if (!(Number(data.amount) > 0)) {
+    errors.amount = 'Amount must be greater than 0';
+  }
+
+  /* YYYY-MM-DD strings can be compared like words, so ">" works for dates */
+  if (data.date === '') {
+    errors.date = 'Date is required';
+  } else if (data.date > todayString()) {
+    errors.date = 'Date cannot be in the future';
   }
 
   return errors;
