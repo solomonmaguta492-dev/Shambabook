@@ -1,4 +1,11 @@
-import { formatAcres, formatCurrency, formatDate, todayString } from '../utils/format.js';
+import {
+  formatAcres,
+  formatCurrency,
+  formatDate,
+  formatQuantity,
+  profitTone,
+  todayString,
+} from '../utils/format.js';
 
 describe('format', () => {
   it('formatCurrency shows KES with commas', () => {
@@ -6,6 +13,23 @@ describe('format', () => {
     expect(formatCurrency(0)).toBe('KES 0');
     expect(formatCurrency(1250.5)).toBe('KES 1,250.5');
     expect(formatCurrency(1000000)).toBe('KES 1,000,000');
+  });
+
+  it('formatCurrency puts the minus sign in front for a loss', () => {
+    expect(formatCurrency(-2000)).toBe('-KES 2,000');
+  });
+
+  it('formatQuantity uses the singular for 1', () => {
+    expect(formatQuantity(20, 'bags')).toBe('20 bags');
+    expect(formatQuantity(1, 'bags')).toBe('1 bag');
+    expect(formatQuantity(1, 'kg')).toBe('1 kg');
+    expect(formatQuantity(3, 'pieces')).toBe('3 pieces');
+  });
+
+  it('profitTone picks a colour name for profit, loss or zero', () => {
+    expect(profitTone(100)).toBe('positive');
+    expect(profitTone(-100)).toBe('negative');
+    expect(profitTone(0)).toBe('neutral');
   });
 
   it('formatDate shows a short, readable date', () => {
