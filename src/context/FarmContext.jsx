@@ -2,9 +2,10 @@ import { createContext, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import * as cropsService from '../services/cropsService.js';
 import * as expensesService from '../services/expensesService.js';
-import { expensesForCrop } from '../utils/calculations.js';
+import * as harvestsService from '../services/harvestsService.js';
+import { expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 
-/* Shares the farm records (crops and expenses) with every logged-in page */
+/* Shares the farm records (crops, expenses and harvests) with every logged-in page */
 /* eslint-disable-next-line react-refresh/only-export-components */
 export const FarmContext = createContext(null);
 
@@ -22,6 +23,11 @@ export function FarmProvider({ children }) {
   const [expensesLoading, setExpensesLoading] = useState(true);
   const [expensesError, setExpensesError] = useState('');
   const [expensesRetry, setExpensesRetry] = useState(0);
+
+  const [harvests, setHarvests] = useState([]);
+  const [harvestsLoading, setHarvestsLoading] = useState(true);
+  const [harvestsError, setHarvestsError] = useState('');
+  const [harvestsRetry, setHarvestsRetry] = useState(0);
 
   useEffect(() => {
     const unsubscribe = cropsService.subscribeToCrops(
@@ -58,6 +64,23 @@ export function FarmProvider({ children }) {
     return unsubscribe;
   }, [uid, expensesRetry]);
 
+  useEffect(() => {
+    const unsubscribe = harvestsService.subscribeToHarvests(
+      uid,
+      (newHarvests) => {
+        setHarvests(newHarvests);
+        setHarvestsError('');
+        setHarvestsLoading(false);
+      },
+      () => {
+        setHarvestsError("We couldn't load your harvests. Please check your connection.");
+        setHarvestsLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [uid, harvestsRetry]);
+
   function retryCrops() {
     setCropsLoading(true);
     setCropsError('');
@@ -70,6 +93,12 @@ export function FarmProvider({ children }) {
     setExpensesRetry((count) => count + 1);
   }
 
+  function retryHarvests() {
+    setHarvestsLoading(true);
+    setHarvestsError('');
+    setHarvestsRetry((count) => count + 1);
+  }
+
   /* The pages don't need to know the uid, these add it for them */
   function addCrop(data) {
     return cropsService.addCrop(uid, data);
@@ -79,12 +108,12 @@ export function FarmProvider({ children }) {
     return cropsService.updateCrop(uid, id, data);
   }
 
-  /* Deleting a crop also deletes its expenses, so none are left without a crop */
+  /* Deleting a crop also deletes its expenses and harvests, so none are left without a crop */
   function deleteCrop(id) {
-    const cropExpenses = expensesForCrop(expenses, id);
     return Promise.all([
       cropsService.deleteCrop(uid, id),
-      ...cropExpenses.map((expense) => expensesService.deleteExpense(uid, expense.id)),
+      ...expensesForCrop(expenses, id).map((expense) => expensesService.deleteExpense(uid, expense.id)),
+      ...harvestsForCrop(harvests, id).map((harvest) => harvestsService.deleteHarvest(uid, harvest.id)),
     ]);
   }
 
@@ -98,6 +127,18 @@ export function FarmProvider({ children }) {
 
   function deleteExpense(id) {
     return expensesService.deleteExpense(uid, id);
+  }
+
+  function addHarvest(data) {
+    return harvestsService.addHarvest(uid, data);
+  }
+
+  function updateHarvest(id, data) {
+    return harvestsService.updateHarvest(uid, id, data);
+  }
+
+  function deleteHarvest(id) {
+    return harvestsService.deleteHarvest(uid, id);
   }
 
   const value = {
@@ -115,6 +156,13 @@ export function FarmProvider({ children }) {
     addExpense,
     updateExpense,
     deleteExpense,
+    harvests,
+    harvestsLoading,
+    harvestsError,
+    retryHarvests,
+    addHarvest,
+    updateHarvest,
+    deleteHarvest,
   };
 
   return <FarmContext.Provider value={value}>{children}</FarmContext.Provider>;
