@@ -27,11 +27,12 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      <div className="fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
+      {/* Success toasts are read out politely; errors use role="alert" so they are read out at once */}
+      <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            role="status"
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`rounded-lg px-4 py-3 font-medium shadow-lg ${styles[toast.type]}`}
           >
             {toast.message}
