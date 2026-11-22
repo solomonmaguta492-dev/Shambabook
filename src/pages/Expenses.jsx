@@ -7,13 +7,16 @@ import Select from '../components/Select.jsx';
 import Spinner from '../components/Spinner.jsx';
 import ExpenseForm from '../components/expenses/ExpenseForm.jsx';
 import ExpenseList from '../components/expenses/ExpenseList.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
 import { EXPENSE_CATEGORIES } from '../utils/validators.js';
 import { formatCurrency } from '../utils/format.js';
 import { totalExpenses } from '../utils/calculations.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 function Expenses() {
+  usePageTitle('Expenses');
   const {
     crops,
     cropsLoading,
@@ -98,12 +101,7 @@ function Expenses() {
 
     if (expensesError) {
       return (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-          <p>{expensesError}</p>
-          <Button variant="secondary" onClick={retryExpenses} className="mt-4">
-            Retry
-          </Button>
-        </div>
+        <ErrorMessage message={expensesError} onRetry={retryExpenses} />
       );
     }
 

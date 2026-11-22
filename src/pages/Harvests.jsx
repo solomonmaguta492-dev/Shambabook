@@ -7,12 +7,15 @@ import Select from '../components/Select.jsx';
 import Spinner from '../components/Spinner.jsx';
 import HarvestForm from '../components/harvests/HarvestForm.jsx';
 import HarvestList from '../components/harvests/HarvestList.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
 import { formatCurrency } from '../utils/format.js';
 import { harvestIncome, totalIncome } from '../utils/calculations.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 function Harvests() {
+  usePageTitle('Harvests');
   const {
     crops,
     cropsLoading,
@@ -87,12 +90,7 @@ function Harvests() {
 
     if (harvestsError) {
       return (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-          <p>{harvestsError}</p>
-          <Button variant="secondary" onClick={retryHarvests} className="mt-4">
-            Retry
-          </Button>
-        </div>
+        <ErrorMessage message={harvestsError} onRetry={retryHarvests} />
       );
     }
 
