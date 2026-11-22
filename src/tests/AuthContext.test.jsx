@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { onAuthStateChanged } from 'firebase/auth';
+import userEvent from '@testing-library/user-event';
+import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { AuthProvider } from '../context/AuthContext.jsx';
 import { useAuth } from '../hooks/useAuth.js';
 
 /* Fake Firebase so the tests never talk to the real service */
 vi.mock('../services/firebase.js', () => ({
-  auth: {},
+  auth: { currentUser: { email: 'farmer@example.com', displayName: 'Old Name' } },
   db: {},
   googleProvider: {},
 }));
@@ -13,6 +14,7 @@ vi.mock('../services/firebase.js', () => ({
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn(),
   signOut: vi.fn(),
+  updateProfile: vi.fn(),
 }));
 
 /* Small component that shows what useAuth gives back */
@@ -65,6 +67,37 @@ describe('AuthContext', () => {
     renderWithProvider();
 
     expect(screen.getByText('No user')).toBeInTheDocument();
+  });
+
+  it('updateName saves the new name and shows it straight away', async () => {
+    const user = userEvent.setup();
+    vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
+      callback(auth.currentUser);
+      return () => {};
+    });
+    /* Firebase changes the name on the current user, so the fake does the same */
+    vi.mocked(updateProfile).mockImplementation(async (currentUser, changes) => {
+      currentUser.displayName = changes.displayName;
+    });
+
+    function ChangeName() {
+      const { user: currentUser, updateName } = useAuth();
+      return (
+        <button type="button" onClick={() => updateName('New Name')}>
+          {currentUser.displayName}
+        </button>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <ChangeName />
+      </AuthProvider>
+    );
+    await user.click(screen.getByRole('button', { name: 'Old Name' }));
+
+    expect(updateProfile).toHaveBeenCalledWith(expect.anything(), { displayName: 'New Name' });
+    expect(await screen.findByRole('button', { name: 'New Name' })).toBeInTheDocument();
   });
 
   it('useAuth throws an error when used outside AuthProvider', () => {
