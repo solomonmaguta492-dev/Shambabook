@@ -94,3 +94,38 @@ export function validateExpense(data) {
 
   return errors;
 }
+
+export const HARVEST_UNITS = ['kg', 'bags', 'crates', 'pieces'];
+
+/* Checks a harvest form; an empty object means everything is fine */
+export function validateHarvest(data) {
+  const errors = {};
+
+  if (!data.cropId) {
+    errors.cropId = 'Please choose a crop';
+  }
+
+  if (String(data.quantity).trim() === '') {
+    errors.quantity = 'Quantity is required';
+  } else if (!(Number(data.quantity) > 0)) {
+    errors.quantity = 'Quantity must be greater than 0';
+  }
+
+  if (!HARVEST_UNITS.includes(data.unit)) {
+    errors.unit = 'Please choose a unit';
+  }
+
+  if (String(data.pricePerUnit).trim() === '') {
+    errors.pricePerUnit = 'Price per unit is required';
+  } else if (!(Number(data.pricePerUnit) > 0)) {
+    errors.pricePerUnit = 'Price per unit must be greater than 0';
+  }
+
+  if (data.date === '') {
+    errors.date = 'Date is required';
+  } else if (data.date > todayString()) {
+    errors.date = 'Date cannot be in the future';
+  }
+
+  return errors;
+}
