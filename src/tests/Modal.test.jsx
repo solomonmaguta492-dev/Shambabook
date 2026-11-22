@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
@@ -40,6 +41,58 @@ describe('Modal', () => {
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+/* A button that opens a modal, so we can check where focus goes on close */
+function OpenAndClose() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open
+      </button>
+      <Modal open={open} title="Add a crop" onClose={() => setOpen(false)}>
+        <button type="button">Save</button>
+      </Modal>
+    </>
+  );
+}
+
+describe('Modal focus', () => {
+  it('focuses the first button when there is no input', async () => {
+    const user = userEvent.setup();
+    render(<OpenAndClose />);
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+  });
+
+  it('keeps Tab inside the modal, going round in both directions', async () => {
+    const user = userEvent.setup();
+    render(<OpenAndClose />);
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+
+    /* The order inside is: Close, then Save */
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus();
+  });
+
+  it('puts focus back on the button that opened it', async () => {
+    const user = userEvent.setup();
+    render(<OpenAndClose />);
+    const openButton = screen.getByRole('button', { name: 'Open' });
+
+    await user.click(openButton);
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(openButton).toHaveFocus();
   });
 });
 

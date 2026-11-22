@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CropDetails from '../pages/CropDetails.jsx';
@@ -9,8 +9,9 @@ vi.mock('../hooks/useFarm.js', () => ({
   useFarm: vi.fn(),
 }));
 
+const mockShowToast = vi.fn();
 vi.mock('../hooks/useToast.js', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
+  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 const maize = {
@@ -24,11 +25,11 @@ const maize = {
 };
 
 function mockFarm(overrides = {}) {
-  vi.mocked(useFarm).mockReturnValue({
+  const farm = {
     crops: [maize],
     cropsLoading: false,
-    updateCrop: vi.fn(),
-    deleteCrop: vi.fn(),
+    updateCrop: vi.fn().mockResolvedValue(),
+    deleteCrop: vi.fn().mockResolvedValue(),
     expenses: [],
     addExpense: vi.fn(),
     updateExpense: vi.fn(),
@@ -38,7 +39,9 @@ function mockFarm(overrides = {}) {
     updateHarvest: vi.fn(),
     deleteHarvest: vi.fn(),
     ...overrides,
-  });
+  };
+  vi.mocked(useFarm).mockReturnValue(farm);
+  return farm;
 }
 
 function renderAt(path) {
@@ -46,6 +49,7 @@ function renderAt(path) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/crops/:id" element={<CropDetails />} />
+        <Route path="/crops" element={<p>All crops page</p>} />
       </Routes>
     </MemoryRouter>
   );
@@ -57,6 +61,10 @@ function cardValue(label) {
 }
 
 describe('CropDetails page', () => {
+  beforeEach(() => {
+    mockShowToast.mockReset();
+  });
+
   it('shows a profit in green', () => {
     mockFarm({
       expenses: [{ id: 'e1', cropId: 'c1', category: 'Seed', amount: 5000, date: '2026-03-01', note: '' }],
@@ -140,5 +148,112 @@ describe('CropDetails page', () => {
     renderAt('/crops/c1');
 
     expect(document.title).toBe('Maize · ShambaBook');
+  });
+
+  it('shows a spinner while crops load', () => {
+    mockFarm({ cropsLoading: true });
+    renderAt('/crops/c1');
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading crop…');
+  });
+
+  it('shows the crop details and empty expense and harvest lists', () => {
+    mockFarm();
+    renderAt('/crops/c1');
+
+    expect(screen.getByText('H614')).toBeInTheDocument();
+    expect(screen.getByText('1 Mar 2026')).toBeInTheDocument();
+    expect(screen.getByText('No expenses for this crop yet.')).toBeInTheDocument();
+    expect(screen.getByText('No harvests for this crop yet.')).toBeInTheDocument();
+  });
+
+  it('has a link back to the crops list when the crop is not found', async () => {
+    const user = userEvent.setup();
+    mockFarm();
+    renderAt('/crops/nope');
+
+    expect(document.title).toBe('Crop not found · ShambaBook');
+    await user.click(screen.getByRole('link', { name: '← Back to crops' }));
+
+    expect(screen.getByText('All crops page')).toBeInTheDocument();
+  });
+
+  it('edits the crop', async () => {
+    const user = userEvent.setup();
+    const farm = mockFarm();
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    const name = within(screen.getByRole('dialog', { name: 'Edit crop' })).getByLabelText('Crop name');
+    await user.clear(name);
+    await user.type(name, 'Yellow maize');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(farm.updateCrop).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'Yellow maize' }));
+    expect(mockShowToast).toHaveBeenCalledWith('Crop updated', 'success');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes the edit form without saving when Cancel is clicked', async () => {
+    const user = userEvent.setup();
+    const farm = mockFarm();
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(farm.updateCrop).not.toHaveBeenCalled();
+  });
+
+  it('deletes the crop and goes back to the crops list', async () => {
+    const user = userEvent.setup();
+    const farm = mockFarm();
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Delete Maize?' })).getByRole('button', { name: 'Delete' }));
+
+    expect(farm.deleteCrop).toHaveBeenCalledWith('c1');
+    expect(mockShowToast).toHaveBeenCalledWith('Crop deleted', 'success');
+    expect(screen.getByText('All crops page')).toBeInTheDocument();
+  });
+
+  it('keeps the crop when Cancel is clicked in the delete dialog', async () => {
+    const user = userEvent.setup();
+    const farm = mockFarm();
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(farm.deleteCrop).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1, name: 'Maize' })).toBeInTheDocument();
+  });
+
+  it('shows an error toast when saving the crop fails', async () => {
+    const user = userEvent.setup();
+    mockFarm({ updateCrop: vi.fn().mockRejectedValue(new Error('offline')) });
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith("Couldn't save the crop. Please try again.", 'error');
+    });
+  });
+
+  it('shows an error toast when deleting the crop fails', async () => {
+    const user = userEvent.setup();
+    mockFarm({ deleteCrop: vi.fn().mockRejectedValue(new Error('offline')) });
+    renderAt('/crops/c1');
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith("Couldn't delete the crop. Please try again.", 'error');
+    });
   });
 });
