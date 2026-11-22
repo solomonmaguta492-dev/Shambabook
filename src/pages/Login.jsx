@@ -7,8 +7,10 @@ import { useAuth } from '../hooks/useAuth.js';
 import { useToast } from '../hooks/useToast.js';
 import { getAuthErrorMessage } from '../utils/authErrors.js';
 import { validateEmail, validatePassword } from '../utils/validators.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 function Login() {
+  usePageTitle('Log in');
   const { login, loginWithGoogle } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -77,8 +79,8 @@ function Login() {
   const busy = submitting || googleLoading;
 
   return (
-    <div className="flex justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-xl border border-stone-300 bg-white p-8 shadow-sm">
+    <div className="flex justify-center px-4 py-10 sm:py-16">
+      <div className="w-full max-w-md rounded-xl border border-stone-300 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-center text-2xl font-bold">Log in</h1>
 
         {/* noValidate turns off the browser's own popups so our messages show instead */}

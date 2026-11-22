@@ -72,7 +72,7 @@ function Modal({ open, title, onClose, children }) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-green-700"
+            className="-m-1 rounded-lg p-2.5 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-green-700"
           >
             <Icon name="close" className="h-5 w-5" />
           </button>

@@ -10,12 +10,16 @@ const linkClasses = 'mt-3 inline-block font-medium text-green-700 hover:text-gre
   Today's weather for the farm. It handles its own loading and errors,
   so the rest of the dashboard keeps working if the weather fails.
 */
-function WeatherCard({ location, locationLoading }) {
+function WeatherCard({ location, locationLoading, locationError }) {
   const { data, loading, error } = useWeather(location);
 
   function renderBody() {
     if (locationLoading || loading) {
       return <Spinner size="small" label="Loading weather…" />;
+    }
+
+    if (locationError) {
+      return <p className="mt-2 text-stone-600">Weather is not available right now.</p>;
     }
 
     if (!location) {

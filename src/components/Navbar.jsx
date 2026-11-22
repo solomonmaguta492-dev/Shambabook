@@ -30,7 +30,7 @@ function Navbar() {
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 text-stone-900 hover:bg-stone-100 md:hidden"
+            className="rounded-lg p-2.5 text-stone-900 hover:bg-stone-100 md:hidden"
           >
             <Icon name={isOpen ? 'close' : 'menu'} />
           </button>

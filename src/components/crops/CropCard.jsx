@@ -4,7 +4,7 @@ import StatusBadge from './StatusBadge.jsx';
 import { formatAcres, formatDate } from '../../utils/format.js';
 
 const iconButton =
-  'rounded-lg p-2 text-stone-500 focus-visible:outline-2 focus-visible:outline-green-700';
+  'rounded-lg p-3 text-stone-500 focus-visible:outline-2 focus-visible:outline-green-700';
 
 /* One crop in the list, with buttons to edit or delete it */
 function CropCard({ crop, deleting = false, onEdit, onDelete }) {

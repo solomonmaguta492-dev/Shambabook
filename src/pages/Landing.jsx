@@ -1,5 +1,6 @@
 import Button from '../components/Button.jsx';
 import Icon from '../components/Icon.jsx';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const features = [
   {
@@ -21,6 +22,7 @@ const features = [
 
 /* Home page shown at "/" */
 function Landing() {
+  usePageTitle();
   return (
     <>
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-2 md:py-20">

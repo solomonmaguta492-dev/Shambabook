@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import Input from '../components/Input.jsx';
 import Spinner from '../components/Spinner.jsx';
 import { useAuth } from '../hooks/useAuth.js';
@@ -8,6 +9,7 @@ import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
 import { searchTowns } from '../services/geocodingApi.js';
 import { validateRequired } from '../utils/validators.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 /* "Nakuru, Nakuru County", or just "Nakuru" when the API gives no region */
 function placeLabel(place) {
@@ -17,8 +19,9 @@ function placeLabel(place) {
 const cardClasses = 'rounded-xl border border-stone-300 bg-white p-5';
 
 function Profile() {
+  usePageTitle('Profile');
   const { user, updateName, logout } = useAuth();
-  const { profile, profileLoading, saveLocation } = useFarm();
+  const { profile, profileLoading, profileError, retryProfile, saveLocation } = useFarm();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -105,12 +108,7 @@ function Profile() {
 
     if (searchStatus === 'error') {
       return (
-        <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-center text-rose-700">
-          <p>We couldn't search for towns. Please check your connection.</p>
-          <Button variant="secondary" onClick={runSearch} className="mt-3">
-            Retry
-          </Button>
-        </div>
+        <ErrorMessage message="We couldn't search for towns. Please check your connection." onRetry={runSearch} />
       );
     }
 
@@ -137,7 +135,11 @@ function Profile() {
 
   function renderCurrentLocation() {
     if (profileLoading) {
-      return <p className="text-stone-600">Loading…</p>;
+      return <Spinner size="small" label="Loading your farm location…" />;
+    }
+
+    if (profileError) {
+      return <ErrorMessage message={profileError} onRetry={retryProfile} />;
     }
 
     if (!profile?.location) {
