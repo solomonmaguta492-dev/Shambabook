@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import * as cropsService from '../services/cropsService.js';
 import * as expensesService from '../services/expensesService.js';
 import * as harvestsService from '../services/harvestsService.js';
+import * as profileService from '../services/profileService.js';
 import { expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 
 /* Shares the farm records (crops, expenses and harvests) with every logged-in page */
@@ -28,6 +29,24 @@ export function FarmProvider({ children }) {
   const [harvestsLoading, setHarvestsLoading] = useState(true);
   const [harvestsError, setHarvestsError] = useState('');
   const [harvestsRetry, setHarvestsRetry] = useState(0);
+
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = profileService.subscribeToProfile(
+      uid,
+      (newProfile) => {
+        setProfile(newProfile);
+        setProfileLoading(false);
+      },
+      () => {
+        setProfileLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [uid]);
 
   useEffect(() => {
     const unsubscribe = cropsService.subscribeToCrops(
@@ -141,6 +160,11 @@ export function FarmProvider({ children }) {
     return harvestsService.deleteHarvest(uid, id);
   }
 
+  /* location is { name, region, latitude, longitude } from the town search */
+  function saveLocation(location) {
+    return profileService.saveProfile(uid, { location });
+  }
+
   const value = {
     crops,
     cropsLoading,
@@ -163,6 +187,9 @@ export function FarmProvider({ children }) {
     addHarvest,
     updateHarvest,
     deleteHarvest,
+    profile,
+    profileLoading,
+    saveLocation,
   };
 
   return <FarmContext.Provider value={value}>{children}</FarmContext.Provider>;
