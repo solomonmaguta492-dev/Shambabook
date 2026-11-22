@@ -6,15 +6,18 @@ import EmptyState from '../components/EmptyState.jsx';
 import Spinner from '../components/Spinner.jsx';
 import CropCard from '../components/crops/CropCard.jsx';
 import CropForm from '../components/crops/CropForm.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import { useFarm } from '../hooks/useFarm.js';
 import { useToast } from '../hooks/useToast.js';
 import { CROP_STATUSES } from '../utils/validators.js';
 import { expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 import { deleteCropMessage } from '../utils/messages.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const FILTERS = ['All', ...CROP_STATUSES];
 
 function Crops() {
+  usePageTitle('Crops');
   const { crops, cropsLoading, cropsError, retryCrops, addCrop, updateCrop, deleteCrop, expenses, harvests } =
     useFarm();
   const { showToast } = useToast();
@@ -82,12 +85,7 @@ function Crops() {
 
     if (cropsError) {
       return (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-          <p>{cropsError}</p>
-          <Button variant="secondary" onClick={retryCrops} className="mt-4">
-            Retry
-          </Button>
-        </div>
+        <ErrorMessage message={cropsError} onRetry={retryCrops} />
       );
     }
 
@@ -146,7 +144,7 @@ function Crops() {
               type="button"
               onClick={() => setFilter(option)}
               aria-pressed={filter === option}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 ${
+              className={`min-h-10 rounded-full border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 ${
                 filter === option
                   ? 'border-green-700 bg-green-700 text-white'
                   : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100'

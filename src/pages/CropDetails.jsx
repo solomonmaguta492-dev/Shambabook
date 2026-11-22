@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Button from '../components/Button.jsx';
+import ErrorMessage from '../components/ErrorMessage.jsx';
 import Modal from '../components/Modal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Spinner from '../components/Spinner.jsx';
@@ -14,13 +15,14 @@ import { useToast } from '../hooks/useToast.js';
 import { formatAcres, formatCurrency, formatDate, profitTone } from '../utils/format.js';
 import { cropProfit, expensesForCrop, harvestsForCrop } from '../utils/calculations.js';
 import { deleteCropMessage } from '../utils/messages.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const backLinkClasses = 'font-medium text-green-700 hover:text-green-800 hover:underline';
 
 function CropDetails() {
   /* The :id part of the address, for example /crops/abc123 */
   const { id } = useParams();
-  const { crops, cropsLoading, updateCrop, deleteCrop, expenses, harvests } = useFarm();
+  const { crops, cropsLoading, cropsError, retryCrops, updateCrop, deleteCrop, expenses, harvests } = useFarm();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -29,8 +31,29 @@ function CropDetails() {
 
   const crop = crops.find((item) => item.id === id);
 
+  /* The tab shows the crop's name once it has loaded */
+  let title = 'Crop not found';
+  if (cropsLoading || cropsError) {
+    title = 'Crop';
+  } else if (crop) {
+    title = crop.name;
+  }
+  usePageTitle(title);
+
   if (cropsLoading) {
     return <Spinner label="Loading crop…" />;
+  }
+
+  /* Without this, a failed load would wrongly say "Crop not found" */
+  if (cropsError) {
+    return (
+      <section>
+        <h1 className="text-2xl font-bold md:text-3xl">Crop</h1>
+        <div className="mt-6">
+          <ErrorMessage message={cropsError} onRetry={retryCrops} />
+        </div>
+      </section>
+    );
   }
 
   if (!crop) {
@@ -84,7 +107,7 @@ function CropDetails() {
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold md:text-3xl">{crop.name}</h1>
+          <h1 className="text-2xl font-bold break-words md:text-3xl">{crop.name}</h1>
           <StatusBadge status={crop.status} />
         </div>
         <div className="flex gap-3">
